@@ -18,8 +18,9 @@ class Student
     sql = <<-SQL
       SELECT * FROM students
     SQL
-    # DB[:conn].execute(sql).each {Student.new_from_db(:&)}
-
+    DB[:conn].execute(sql).collect do |row|
+      self.new_from_db(row)
+    end
   end
 
   def self.find_by_name(name)
@@ -66,22 +67,21 @@ class Student
 
   def self.students_below_12th_grade
     sql = "SELECT * FROM students WHERE grade < 12"
-    DB[:conn].execute(sql)
+    students = DB[:conn].execute(sql)
+    students.collect do |row|
+      self.new_from_db(row)
+    end
   end
 
   def self.first_X_students_in_grade_10(num)
     sql = "SELECT * FROM students WHERE grade = 10 LIMIT ?"
-    DB[:conn].execute(sql, num)
+    return DB[:conn].execute(sql, num)
   end
 
   def self.first_student_in_grade_10
     sql = "SELECT * FROM students WHERE grade = 10 LIMIT 1"
     student_row = DB[:conn].execute(sql)
-    ObjectSpace.each_object(self) do |student_obj|
-      if student_obj.name == student_row[1]
-        return student_obj
-      end
-    end
+    return self.new_from_db(student_row[0])
   end
 
   def self.all_students_in_grade_X(num)
